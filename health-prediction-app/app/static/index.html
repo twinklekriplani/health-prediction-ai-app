@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIRA | Medical Intelligence Robotic Automation</title>
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- App Styling -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <i data-lucide="shield-check" class="brand-icon"></i>
+                </div>
+                <div class="brand-info">
+                    <h1>MIRA</h1>
+                    <span>Medical Intelligence</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-patients" onclick="switchTab('patients')">
+                    <i data-lucide="users"></i>
+                    <span>Patients Grid</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="connection-status">
+                    <span class="status-indicator online"></span>
+                    <span class="status-text" id="api-status">System Standby</span>
+                </div>
+                <div class="footer-app-info">
+                    <p>v1.2.0 • Local AI Engine</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h2 id="page-title">Operational Dashboard</h2>
+                    <p class="subtitle" id="page-subtitle">Real-time health predictive diagnostics overview</p>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="patient-search" placeholder="Search patients, emails, or remarks..." oninput="handleSearch()">
+                    </div>
+                    <button class="btn btn-primary" onclick="openPatientModal(false)">
+                        <i data-lucide="user-plus"></i>
+                        <span>Add Patient</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="tab-view active">
+                <!-- Vitals Statistics Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Total Patients</span>
+                            <div class="stat-icon icon-blue">
+                                <i data-lucide="users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="stat-total-patients">0</div>
+                        <div class="stat-footer">
+                            <span class="trend neutral">Currently Enrolled</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Average Glucose</span>
+                            <div class="stat-icon icon-orange">
+                                <i data-lucide="droplet"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="stat-avg-glucose">0 <span class="unit">mg/dL</span></div>
+                        <div class="stat-footer">
+                            <span class="trend" id="stat-glucose-status">Normal Baseline</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Average Haemoglobin</span>
+                            <div class="stat-icon icon-red">
+                                <i data-lucide="heart-pulse"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="stat-avg-haemo">0 <span class="unit">g/dL</span></div>
+                        <div class="stat-footer">
+                            <span class="trend" id="stat-haemo-status">Optimal Range</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Average Cholesterol</span>
+                            <div class="stat-icon icon-teal">
+                                <i data-lucide="activity"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="stat-avg-cholesterol">0 <span class="unit">mg/dL</span></div>
+                        <div class="stat-footer">
+                            <span class="trend" id="stat-cholesterol-status">Desirable levels</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Dashboard Section -->
+                <div class="dashboard-details">
+                    <!-- Patient Risk Distribution -->
+                    <div class="chart-card glass-card">
+                        <h3>Patient Risk Distribution</h3>
+                        <p class="card-subtitle">AI-classified cardiovascular & metabolic risk categories</p>
+                        <div class="chart-container-doughnut">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                        <div class="chart-legend" id="risk-legend">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Clinical Activity Feed / Recent Signups -->
+                    <div class="recent-patients-card glass-card">
+                        <div class="card-header-flex">
+                            <h3>Recently Evaluated Patients</h3>
+                            <button class="btn btn-text" onclick="switchTab('patients')">View All</button>
+                        </div>
+                        <div class="recent-list-container" id="recent-patients-list">
+                            <!-- Populated by JS -->
+                            <div class="empty-state">
+                                <i data-lucide="inbox"></i>
+                                <p>No patient records in database. Click 'Add Patient' to begin.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Patients Grid View -->
+            <section id="view-patients" class="tab-view">
+                <div class="table-card glass-card">
+                    <div class="table-container">
+                        <table class="patient-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Details</th>
+                                    <th>Age & DOB</th>
+                                    <th>Fasting Glucose</th>
+                                    <th>Haemoglobin</th>
+                                    <th>Cholesterol</th>
+                                    <th>Risk Classification</th>
+                                    <th class="actions-col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add/Edit Patient Modal (Side Drawer) -->
+    <div id="patient-modal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Record Patient Vitals</h3>
+                <button class="btn-close" onclick="closePatientModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="patient-form" onsubmit="savePatient(event)">
+                <input type="hidden" id="form-patient-id">
+                
+                <div class="form-group">
+                    <label for="form-name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="form-name" placeholder="John Doe" required>
+                    </div>
+                    <span class="error-msg" id="error-name"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="form-dob">Date of Birth</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="calendar"></i>
+                            <input type="date" id="form-dob" required>
+                        </div>
+                        <span class="error-msg" id="error-dob"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="form-email">Email Address</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="mail"></i>
+                            <input type="email" id="form-email" placeholder="john.doe@example.com" required>
+                        </div>
+                        <span class="error-msg" id="error-email"></span>
+                    </div>
+                </div>
+
+                <div class="section-divider">Blood Panel Vitals</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="form-glucose">Fasting Glucose <span class="range-hint">(70-100 mg/dL)</span></label>
+                        <div class="input-wrapper">
+                            <i data-lucide="droplet"></i>
+                            <input type="number" step="0.1" id="form-glucose" placeholder="95.0" required>
+                        </div>
+                        <span class="error-msg" id="error-glucose"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-haemoglobin">Haemoglobin <span class="range-hint">(12.0-17.5 g/dL)</span></label>
+                        <div class="input-wrapper">
+                            <i data-lucide="heart-pulse"></i>
+                            <input type="number" step="0.1" id="form-haemoglobin" placeholder="14.5" required>
+                        </div>
+                        <span class="error-msg" id="error-haemoglobin"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="form-cholesterol">Cholesterol <span class="range-hint">(<200 mg/dL)</span></label>
+                        <div class="input-wrapper">
+                            <i data-lucide="activity"></i>
+                            <input type="number" step="0.1" id="form-cholesterol" placeholder="180.0" required>
+                        </div>
+                        <span class="error-msg" id="error-cholesterol"></span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePatientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-patient">
+                        <i data-lucide="save"></i>
+                        <span>Generate Remarks & Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Patient Details Modal -->
+    <div id="details-modal" class="modal-overlay">
+        <div class="modal-content glass-card details-modal-content">
+            <div class="modal-header">
+                <h3>Clinical Analysis Report</h3>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="btn-edit-details" onclick="editFromDetails()">
+                        <i data-lucide="edit"></i>
+                        <span>Edit Record</span>
+                    </button>
+                    <button class="btn-close" onclick="closeDetailsModal()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="details-grid">
+                <!-- Left: Patient Summary & Chart -->
+                <div class="details-left">
+                    <div class="patient-profile-card">
+                        <div class="avatar-large" id="detail-avatar">JD</div>
+                        <div class="profile-info">
+                            <h2 id="detail-name">Patient Name</h2>
+                            <p id="detail-email">email@example.com</p>
+                            <div class="badge-row">
+                                <span class="badge" id="detail-age">Age: --</span>
+                                <span class="badge" id="detail-dob-badge">DOB: --</span>
+                                <span class="badge badge-risk" id="detail-risk-badge">Risk: Low</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vitals-chart-container">
+                        <h4>Diagnostic Vital Spectrum</h4>
+                        <p class="chart-desc">Patient markers plotted against clinical reference thresholds</p>
+                        <canvas id="detailVitalsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: AI Remarks & Diagnostics -->
+                <div class="details-right">
+                    <div class="ai-remarks-container">
+                        <div class="ai-remarks-header">
+                            <div class="ai-logo">
+                                <i data-lucide="sparkles"></i>
+                                <span>MIRA AI Engine Report</span>
+                            </div>
+                            <span class="ai-engine-tag" id="detail-engine">Local Matrix</span>
+                        </div>
+                        
+                        <div class="ai-remarks-body">
+                            <div class="ai-narrative">
+                                <h5>Clinical Summary</h5>
+                                <p id="detail-ai-summary">Analyzing...</p>
+                            </div>
+                            
+                            <div class="ai-conditions">
+                                <h5>Identified Indications</h5>
+                                <ul id="detail-ai-conditions">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+
+                            <div class="ai-recommendations">
+                                <h5>Prescriptive Lifestyle & Dietary Recommendations</h5>
+                                <ul id="detail-ai-recommendations">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- App Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Initialize lucide icons when window loads
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
